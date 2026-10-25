@@ -140,3 +140,5 @@ go run github.com/snadrus/gopidgin@latest apply [-n] [-C modroot] [file|-]
 
 - **If the skill isn't installed**:
   - Ask the agent to output Go Pidgin hunks and run the CLI manually as above.
+
+Note: Match file indentation (tabs) on `-`/`+` lines when possible; the expander also tolerates leading‑whitespace mismatch for context and `-` lines.

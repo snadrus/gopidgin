@@ -22,6 +22,12 @@ What to emit (Pidgin v0):
   - `$name=Identifier` or `$=Identifier`
   - No keyword bytecode; no `vN` line references
 
+Indentation rules and recovery:
+- Before writing a hunk, Read the target `.go` file and copy indentation exactly (gofmt uses tabs for blocks). Do not guess spaces.
+- Prefer including the exact current line as the `-` line (byte‑for‑byte from the file) and only change what must change on `+`.
+- If apply fails: re‑read the file and fix the hunk indent. Do not explore gopidgin’s module cache unless apply still fails twice.
+- Still: only edit `.gopidgin` (or stdin), never Write/ApplyPatch `.go` files for edits; expand with the CLI below.
+
 How to expand:
 - Write the hunks to a temporary file (e.g., `.gopidgin`) or pipe via stdin.
 - Run the expander at the module root (or pass `-C`):
