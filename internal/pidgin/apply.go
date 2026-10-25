@@ -121,6 +121,8 @@ func findSubsequenceDetailed(haystack []string, needle []string) (pos int, failB
 	if len(needle) == 0 {
 		return 0, -1, -1
 	}
+	firstFailBase := -1
+	firstFailNeedle := -1
 	for i := 0; i+len(needle) <= len(haystack); i++ {
 		if !eqLine(haystack[i], needle[0]) {
 			continue
@@ -136,22 +138,28 @@ func findSubsequenceDetailed(haystack []string, needle []string) (pos int, failB
 		if mismatch == -1 {
 			return i, -1, -1 // success
 		}
-		// return first mismatch we encounter for a plausible candidate
-		return -1, i + mismatch, mismatch
+		// record first mismatch but continue scanning further candidates
+		if firstFailBase < 0 && firstFailNeedle < 0 {
+			firstFailBase = i + mismatch
+			firstFailNeedle = mismatch
+		}
+		// continue to next i
 	}
 	// Not found at all; maybe show first expected line wasn't found
-	for i := 0; i < len(haystack); i++ {
-		if eqLine(haystack[i], needle[0]) {
-			// Should have been caught above; just in case
-			return -1, i, 0
-		}
+	if firstFailBase >= 0 {
+		return -1, firstFailBase, firstFailNeedle
 	}
 	return -1, -1, -1
 }
 
 func eqLine(a, b string) bool {
-	// compare ignoring leading whitespace differences
-	return strings.TrimLeft(a, " \t") == strings.TrimLeft(b, " \t")
+	// compare ignoring leading whitespace differences and trailing line endings
+	norm := func(s string) string {
+		s = strings.TrimLeft(s, " \t")
+		s = strings.TrimRight(s, "\r\n")
+		return s
+	}
+	return norm(a) == norm(b)
 }
 
 func indexToLine(lines []string, idx int) int {

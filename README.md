@@ -123,6 +123,10 @@ go run . apply -n -C example example.gopidgin
 
 Note: Match file indentation (tabs) on `-`/`+` lines when possible; the expander tolerates leading‑whitespace mismatch for context and `-` lines. Go formatters/imports run only for `.go` files; other paths are applied raw.
 
+Recovery protocol:
+- If `apply` reports a mismatch, re‑read the target source file and fix the pidgin document once using the expected/got hint, then run `apply` again.
+- Avoid using dry‑run for recovery — prefer succeeding on the first (or second after one correction) real apply.
+
 Write `.gopidgin` then apply (file default):
 
 ```bash

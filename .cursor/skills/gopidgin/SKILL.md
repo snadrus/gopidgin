@@ -20,6 +20,11 @@ One‑shot loop (tool‑agnostic):
 
 No dry‑run unless the user explicitly requests a preview.
 
+Recovery protocol (avoid token waste):
+- If `apply` reports a mismatch, re‑read the target source file (not the gopidgin sources) and fix the pidgin document once using the expected/got hint, then run `apply` again for real.
+- Do not use dry‑run for recovery, do not probe with heredocs, and do not call `-h`.
+- Prefer one successful apply; a second apply is only after that single correction.
+
 General bans (keep tokens low and avoid dead ends):
 - Do not read or explore anything under `$(go env GOMODCACHE)/github.com/snadrus/gopidgin...`
 - Do not read the `github.com/snadrus/gopidgin` repository contents unless you are developing gopidgin itself
