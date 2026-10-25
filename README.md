@@ -2,10 +2,11 @@
 
 Compact agent-facing Go hunks; local expander applies them onto a module, then runs goimports + gofmt.
 
-- One‑liner:
+- Quick start:
 
 ```bash
-go run github.com/snadrus/gopidgin@latest apply -n -C example example.gopidgin
+go install github.com/snadrus/gopidgin@latest
+gopidgin apply -C example example.gopidgin
 ```
 
 If you vendor the binary under `cmd/gopidgin`, use:
@@ -168,3 +169,8 @@ gopidgin apply <<'PIDGIN'
 +	new
 PIDGIN
 ```
+
+Token economics (optimize input vs output separately):
+- Output is the expensive side. As a rough score, minimize input + 4×output tokens.
+- Be concise in hunks: 0–2 context lines, no ordinary imports, use `$name=Ident` for repeated long names.
+- Prefer pidgin for multi‑hunk or many repeated identifiers. For a single tiny edit, regular edit may still be cheaper/faster.

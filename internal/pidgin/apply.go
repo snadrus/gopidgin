@@ -39,7 +39,16 @@ func ApplyUnified(base string, diff []DiffLine) (string, error) {
 	if len(expected) > 0 {
 		pos, failBaseIdx, failNeedleIdx := findSubsequenceDetailed(baseLines, expected)
 		if pos < 0 {
-			// Could not locate context start; surface first expected line
+			// Could not locate context region; if we have a concrete mismatch candidate, surface it.
+			if failNeedleIdx >= 0 && failBaseIdx >= 0 {
+				return "", &MatchError{
+					Kind:     "context",
+					Line:     indexToLine(baseLines, failBaseIdx),
+					Expected: expected[failNeedleIdx],
+					Found:    baseLines[failBaseIdx],
+				}
+			}
+			// Otherwise surface the first expected line
 			first := ""
 			if len(expected) > 0 {
 				first = expected[0]

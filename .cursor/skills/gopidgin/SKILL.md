@@ -18,6 +18,11 @@ Hard bans:
 - Do not rewrite `.gopidgin` more than once unless apply failed with a clear mismatch error
 - Do not use Write/StrReplace on `.go` for the code change (edits must be pidgin + apply)
 
+Token economics:
+- Optimize input and output separately; output is more expensive. Rough score: input + 4×output tokens.
+- Keep hunks minimal (0–2 context lines). Omit ordinary imports. Use `$name=Ident` for repeated long names. Do not reprint unmodified code.
+- Prefer pidgin for multi‑hunk changes or when many long identifiers repeat; for a trivial one‑liner, regular edit may be cheaper.
+
 Pidgin v0 you must emit:
 - `@ <relpath> <anchor>`: anchors are `func Name`, `func (T) M`, `func (*T) M`, `type Name`, `const Name`, `var Name`, or `package` (never line numbers)
 - Unified diff lines inside the span: leading space=context, `-`=remove, `+`=add
