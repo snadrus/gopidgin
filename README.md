@@ -155,12 +155,19 @@ Note: Match file indentation (tabs) on `-`/`+` lines when possible; the expander
 #### Token‑efficient Cursor loop
 
 - Read only the `.go` files you will edit.
-- Write one `.gopidgin` (or stdin) with all hunks.
-- Run exactly one apply (no `-n` unless a preview was requested).
+- Write/overwrite one `.gopidgin` at the module root with all hunks (single write call).
+- Run exactly one apply (no `-n` unless a preview was requested), then optionally `go build`/`go test` once.
 - Optionally run `go build` or `go test` once to validate.
 - Stop; do not paste the expanded Go back into chat.
 
-One‑shot heredoc:
+Preferred (Cursor agents): write `.gopidgin` then apply (no file arg):
+
+```bash
+printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
+gopidgin apply
+```
+
+Alternate (humans/CLI): heredoc to stdin (explicit `-`):
 
 ```bash
 gopidgin apply - <<'PIDGIN'

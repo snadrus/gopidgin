@@ -7,10 +7,9 @@ Use this skill to make Go edits with compact Pidgin hunks, then expand with the 
 
 Strict one‑shot loop (token‑positive):
 1) Read only the target `.go` files you will change. Do NOT re‑read this skill once attached; do NOT read `go.mod`; no project‑wide globs.
-2) Write one `.gopidgin` (or stdin) containing all hunks.
-3) Run exactly one apply — no `-n`/dry‑run unless the user explicitly requests a preview.
-4) Optionally run `go build` (or `go test`) once if needed for validation.
-5) Stop. Do not paste expanded Go back into chat.
+2) Write/overwrite a single `.gopidgin` at the module root with ALL hunks (one write tool call).
+3) Run exactly one shell: `gopidgin apply` (no file arg; defaults to `.gopidgin`) and optionally `go build`/`go test` once.
+4) Stop. Do not paste expanded Go back into chat.
 
 Hard bans:
 - Do not read or explore anything under `$(go env GOMODCACHE)/github.com/snadrus/gopidgin...`
@@ -43,17 +42,14 @@ Indentation and recovery:
 - Only edit `.gopidgin` (or stdin), never `.go` directly.
 
 How to expand:
-- Preferred one‑shot heredoc (single tool invocation for write+apply):
+- Preferred (Cursor agents): write `.gopidgin` then run apply (no file arg):
 
 ```bash
-go run github.com/snadrus/gopidgin@latest apply - <<'PIDGIN'
-@ path.go func Name
--	old
-+	new
-PIDGIN
+printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
+gopidgin apply
 ```
 
-If `gopidgin` is already on PATH, prefer it over `go run`:
+- Alternate (humans/CLI): heredoc to stdin (explicit `-`):
 
 ```bash
 gopidgin apply - <<'PIDGIN'
