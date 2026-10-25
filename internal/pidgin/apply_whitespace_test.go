@@ -20,3 +20,23 @@ func TestApplyUnified_IndentTolerance(t *testing.T) {
 	}
 }
 
+func TestApplyUnified_IndentTolerance_MultiLine(t *testing.T) {
+	before := "func F() {\n\tprintln(1)\n\tprintln(2)\n}\n"
+	diff := []DiffLine{
+		{Kind: LineContext, Text: "func F() {"},
+		{Kind: LineDel, Text: "  println(1)"},
+		{Kind: LineAdd, Text: "  println(10)"},
+		{Kind: LineDel, Text: "\tprintln(2)"}, // mixed tab on '-' should still match
+		{Kind: LineAdd, Text: "  println(20)"},
+		{Kind: LineContext, Text: "}"},
+	}
+	after, err := ApplyUnified(before, diff)
+	if err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	want := "func F() {\n  println(10)\n  println(20)\n}\n"
+	if after != want {
+		t.Fatalf("got:\n%q\nwant:\n%q", after, want)
+	}
+}
+

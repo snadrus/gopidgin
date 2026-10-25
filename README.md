@@ -25,6 +25,14 @@ gopidgin apply [-C modroot] [-n|--dry-run] [--force] [file|-]
 - Exit codes: 0 ok; 2 parse/anchor error; 3 tool/build failure
 - Re-applying an already-applied hunk errors unless `--force`
 
+Install the binary to avoid repeated `go run` compilation:
+
+```bash
+go install github.com/snadrus/gopidgin@latest
+# then:
+gopidgin apply ...
+```
+
 ### Grammar (v0)
 
 Hunk header:
@@ -142,3 +150,21 @@ go run github.com/snadrus/gopidgin@latest apply [-n] [-C modroot] [file|-]
   - Ask the agent to output Go Pidgin hunks and run the CLI manually as above.
 
 Note: Match file indentation (tabs) on `-`/`+` lines when possible; the expander also tolerates leading‑whitespace mismatch for context and `-` lines.
+
+#### Token‑efficient Cursor loop
+
+- Read only the `.go` files you will edit.
+- Write one `.gopidgin` (or stdin) with all hunks.
+- Run exactly one apply (no `-n` unless a preview was requested).
+- Optionally run `go build` or `go test` once to validate.
+- Stop; do not paste the expanded Go back into chat.
+
+One‑shot heredoc:
+
+```bash
+gopidgin apply <<'PIDGIN'
+@ path.go func Name
+-	old
++	new
+PIDGIN
+```

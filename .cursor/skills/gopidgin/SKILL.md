@@ -3,44 +3,59 @@ name: gopidgin
 description: Emit compact Go Pidgin hunks and expand with gopidgin apply. Use when editing Go, writing Go patches, or when the user mentions pidgin, gopidgin, or token-cheap Go output.
 ---
 
-Use this skill whenever you need to change Go code. Prefer emitting compact Pidgin hunks over full-file edits. Expand locally with the `gopidgin` CLI.
+Use this skill to make Go edits with compact Pidgin hunks, then expand with the `gopidgin` CLI in one shot. This minimizes tool churn and tokens.
 
-What to emit (Pidgin v0):
-- Only Pidgin hunks, never full `.go` files for edits. New files use a create hunk.
-- Anchor each hunk with `@ <relpath> <anchor>` where anchor is one of:
-  - `func Name`, `func (T) Method`, `func (*T) Method`, `type Name`, `const Name`, `var Name`, or `package`
-  - Never use line numbers
-- Inside hunks, use unified diff lines:
-  - Leading space = context, `-` = remove, `+` = add
-- Imports:
-  - Omit ordinary/default imports entirely; goimports will add them
-  - Emit ONLY special imports:
-    - renamed: `import sql "database/sql"`
-    - blank: `import _ "image/png"`
-    - dot: `import . "fmt"`
-- Optional hunk‑local aliases for brevity:
+Strict one‑shot loop (token‑positive):
+1) Read only the target `.go` files you will change (not this skill again; not `go.mod`; no project‑wide globs).
+2) Write one `.gopidgin` (or stdin) containing all hunks.
+3) Run exactly one apply — do not use `-n`/dry‑run unless the user requests a preview.
+4) Optionally run `go build` (or `go test`) once if needed for validation.
+5) Stop. Do not paste expanded Go back into chat.
+
+Hard bans:
+- Do not explore `$(go env GOMODCACHE)/github.com/snadrus/gopidgin...`
+- Do not run `cat -A`, `od`, or hex dumps for indent debugging
+- Do not rewrite `.gopidgin` more than once unless apply failed with a clear mismatch error
+- Do not use Write/StrReplace on `.go` for the code change (edits must be pidgin + apply)
+
+Pidgin v0 you must emit:
+- `@ <relpath> <anchor>`: anchors are `func Name`, `func (T) M`, `func (*T) M`, `type Name`, `const Name`, `var Name`, or `package` (never line numbers)
+- Unified diff lines inside the span: leading space=context, `-`=remove, `+`=add
+- Imports: omit ordinary imports; only emit special ones:
+  - renamed: `import sql "database/sql"`
+  - blank: `import _ "image/png"`
+  - dot: `import . "fmt"`
+- Optional hunk‑local aliases for repeated idents:
   - `$name=Identifier` or `$=Identifier`
   - No keyword bytecode; no `vN` line references
 
-Indentation rules and recovery:
-- Before writing a hunk, Read the target `.go` file and copy indentation exactly (gofmt uses tabs for blocks). Do not guess spaces.
-- Prefer including the exact current line as the `-` line (byte‑for‑byte from the file) and only change what must change on `+`.
-- If apply fails: re‑read the file and fix the hunk indent. Do not explore gopidgin’s module cache unless apply still fails twice.
-- Still: only edit `.gopidgin` (or stdin), never Write/ApplyPatch `.go` files for edits; expand with the CLI below.
+Indentation and recovery:
+- Copy indentation exactly from the file (gofmt uses tabs for blocks). Prefer pasting the exact current line as the `-` line and only changing `+`.
+- If apply fails, re‑read the file and fix the hunk indent; expander tolerates leading‑whitespace mismatch on context/`-` lines, but exact matches are more reliable.
+- Only edit `.gopidgin` (or stdin), never `.go` directly.
 
 How to expand:
-- Write the hunks to a temporary file (e.g., `.gopidgin`) or pipe via stdin.
-- Run the expander at the module root (or pass `-C`):
+- Preferred one‑shot heredoc (single tool invocation for write+apply):
 
 ```bash
-go run github.com/snadrus/gopidgin@latest apply [-n] [-C modroot] [file|-]
+go run github.com/snadrus/gopidgin@latest apply <<'PIDGIN'
+@ path.go func Name
+-	old
++	new
+PIDGIN
 ```
 
-Guidance:
-- Prefer `-n/--dry-run` first to preview a unified diff; then apply for real.
-- Do not paste the expanded Go back into chat unless the user explicitly asks.
-- If an anchor fails to resolve, fix the anchor (never switch to line numbers).
-- Grammar and examples: see the repo README.
+If `gopidgin` is already on PATH, prefer it over `go run`:
+
+```bash
+gopidgin apply <<'PIDGIN'
+@ path.go func Name
+-	old
++	new
+PIDGIN
+```
+
+Grammar and more examples: see the repo README.
 
 Create hunk example:
 

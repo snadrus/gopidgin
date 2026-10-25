@@ -186,7 +186,21 @@ func runApply(args []string) int {
 		// Apply unified hunk to span
 		newSpan, apErr := pidgin.ApplyUnified(span.Text, h.Diff)
 		if apErr != nil {
-			fmt.Fprintf(os.Stderr, "apply error for %s: %v\n", h.RelPath, apErr)
+			// Surface actionable mismatch with file line numbers when possible
+			if me, ok := apErr.(*pidgin.MatchError); ok {
+				fileLine := 0
+				if me.Line > 0 {
+					prefix := orig[:span.StartOffset]
+					fileLine = 1 + bytes.Count([]byte(prefix), []byte("\n")) + me.Line - 1
+				}
+				if fileLine > 0 {
+					fmt.Fprintf(os.Stderr, "%s:%d: %s\n", h.RelPath, fileLine, me.Error())
+				} else {
+					fmt.Fprintf(os.Stderr, "%s: %s\n", h.RelPath, me.Error())
+				}
+			} else {
+				fmt.Fprintf(os.Stderr, "apply error for %s: %v\n", h.RelPath, apErr)
+			}
 			return 2
 		}
 

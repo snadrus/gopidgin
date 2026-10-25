@@ -5,6 +5,24 @@ import (
 	"strings"
 )
 
+// MatchError describes a whitespace-tolerant matching failure during hunk apply.
+type MatchError struct {
+	Kind       string // "context" or "delete"
+	Line       int    // 1-based line number in base
+	Expected   string // leading-WS-trimmed expected
+	Found      string // leading-WS-trimmed found
+	Paragraph  string // cached one-line message
+}
+
+func (e *MatchError) Error() string {
+	if e.Paragraph != "" {
+		return e.Paragraph
+	}
+	msg := fmt.Sprintf("%s mismatch at line %d: expected %q, got %q (hint: re-copy line from file)", e.Kind, e.Line, strings.TrimLeft(e.Expected, " \t"), strings.TrimLeft(e.Found, " \t"))
+	e.Paragraph = msg
+	return msg
+}
+
 // ApplyUnified applies a simple unified hunk (context/-/+) onto base.
 // It supports a single contiguous region per hunk, with optional 0-2 context lines.
 // If there are no context/del lines (pure insertion), it inserts at the end.
@@ -19,11 +37,29 @@ func ApplyUnified(base string, diff []DiffLine) (string, error) {
 	}
 	start := 0
 	if len(expected) > 0 {
-		pos := findSubsequence(baseLines, expected)
+		pos, failBaseIdx, failNeedleIdx := findSubsequenceDetailed(baseLines, expected)
 		if pos < 0 {
-			return "", fmt.Errorf("context does not match target")
+			// Could not locate context start; surface first expected line
+			first := ""
+			if len(expected) > 0 {
+				first = expected[0]
+			}
+			return "", &MatchError{
+				Kind:     "context",
+				Line:     0,
+				Expected: first,
+				Found:    "",
+			}
 		}
 		start = pos
+		if failNeedleIdx >= 0 && failBaseIdx >= 0 {
+			return "", &MatchError{
+				Kind:     "context",
+				Line:     indexToLine(baseLines, failBaseIdx),
+				Expected: expected[failNeedleIdx],
+				Found:    baseLines[failBaseIdx],
+			}
+		}
 	}
 	// Rebuild with patch region applied
 	var out []string
@@ -36,14 +72,24 @@ func ApplyUnified(base string, diff []DiffLine) (string, error) {
 		case LineContext:
 			// Must match next base line
 			if i >= len(baseLines) || !eqLine(baseLines[i], dl.Text+"\n") {
-				return "", fmt.Errorf("context mismatch applying at position")
+				return "", &MatchError{
+					Kind:     "context",
+					Line:     indexToLine(baseLines, i),
+					Expected: dl.Text + "\n",
+					Found:    guardIndex(baseLines, i),
+				}
 			}
 			out = append(out, baseLines[i])
 			i++
 		case LineDel:
 			// Must match next base line; then skip
 			if i >= len(baseLines) || !eqLine(baseLines[i], dl.Text+"\n") {
-				return "", fmt.Errorf("delete mismatch applying at position")
+				return "", &MatchError{
+					Kind:     "delete",
+					Line:     indexToLine(baseLines, i),
+					Expected: dl.Text + "\n",
+					Found:    guardIndex(baseLines, i),
+				}
 			}
 			i++
 		}
@@ -62,27 +108,52 @@ func splitKeepNL(s string) []string {
 	return parts
 }
 
-func findSubsequence(haystack []string, needle []string) int {
+func findSubsequenceDetailed(haystack []string, needle []string) (pos int, failBaseIdx int, failNeedleIdx int) {
 	if len(needle) == 0 {
-		return 0
+		return 0, -1, -1
 	}
 	for i := 0; i+len(needle) <= len(haystack); i++ {
-		ok := true
+		if !eqLine(haystack[i], needle[0]) {
+			continue
+		}
+		// candidate
+		mismatch := -1
 		for j := 0; j < len(needle); j++ {
 			if !eqLine(haystack[i+j], needle[j]) {
-				ok = false
+				mismatch = j
 				break
 			}
 		}
-		if ok {
-			return i
+		if mismatch == -1 {
+			return i, -1, -1 // success
+		}
+		// return first mismatch we encounter for a plausible candidate
+		return -1, i + mismatch, mismatch
+	}
+	// Not found at all; maybe show first expected line wasn't found
+	for i := 0; i < len(haystack); i++ {
+		if eqLine(haystack[i], needle[0]) {
+			// Should have been caught above; just in case
+			return -1, i, 0
 		}
 	}
-	return -1
+	return -1, -1, -1
 }
 
 func eqLine(a, b string) bool {
 	// compare ignoring leading whitespace differences
 	return strings.TrimLeft(a, " \t") == strings.TrimLeft(b, " \t")
+}
+
+func indexToLine(lines []string, idx int) int {
+	// 1-based line number equals idx+1 since we split by lines
+	return idx + 1
+}
+
+func guardIndex(lines []string, idx int) string {
+	if idx < 0 || idx >= len(lines) {
+		return ""
+	}
+	return lines[idx]
 }
 
