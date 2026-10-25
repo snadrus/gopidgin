@@ -34,3 +34,24 @@ func TestResolveFuncAndMethod(t *testing.T) {
 	}
 }
 
+func TestResolveTypeSpansFromKeyword(t *testing.T) {
+	src := `package p
+
+type Hunk struct {
+	A string
+}
+`
+	tmp := t.TempDir()
+	p := filepath.Join(tmp, "x.go")
+	if err := os.WriteFile(p, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	span, err := Resolve(p, src, pidgin.AnchorSpec{Kind: pidgin.AnchorType, Name: "Hunk"})
+	if err != nil {
+		t.Fatalf("resolve type: %v", err)
+	}
+	if got := span.Text[:9]; got != "type Hunk" {
+		t.Fatalf("type span should start with 'type Hunk', got %q", got)
+	}
+}
+

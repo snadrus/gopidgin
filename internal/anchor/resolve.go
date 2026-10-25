@@ -58,23 +58,24 @@ func locate(fset *token.FileSet, f *ast.File, spec pidgin.AnchorSpec) (token.Pos
 		}
 		return fn.Pos(), fn.End(), nil
 	case pidgin.AnchorType:
-		ts := findType(f, spec.Name)
-		if ts == nil {
+		ts, gd := findTypeWithGen(f, spec.Name)
+		if ts == nil || gd == nil {
 			return 0, 0, notFound(f, spec)
 		}
-		return ts.Pos(), ts.End(), nil
+		// Span from 'type' keyword (TokPos) through this specific spec's End
+		return gd.TokPos, ts.End(), nil
 	case pidgin.AnchorConst:
-		vs := findValueSpec(f, token.CONST, spec.Name)
-		if vs == nil {
+		vs, gd := findValueSpecWithGen(f, token.CONST, spec.Name)
+		if vs == nil || gd == nil {
 			return 0, 0, notFound(f, spec)
 		}
-		return vs.Pos(), vs.End(), nil
+		return gd.TokPos, vs.End(), nil
 	case pidgin.AnchorVar:
-		vs := findValueSpec(f, token.VAR, spec.Name)
-		if vs == nil {
+		vs, gd := findValueSpecWithGen(f, token.VAR, spec.Name)
+		if vs == nil || gd == nil {
 			return 0, 0, notFound(f, spec)
 		}
-		return vs.Pos(), vs.End(), nil
+		return gd.TokPos, vs.End(), nil
 	default:
 		return 0, 0, fmt.Errorf("unsupported anchor kind")
 	}
@@ -124,6 +125,11 @@ func receiverMatches(fieldList *ast.FieldList, recv string) bool {
 }
 
 func findType(f *ast.File, name string) *ast.TypeSpec {
+	ts, _ := findTypeWithGen(f, name)
+	return ts
+}
+
+func findTypeWithGen(f *ast.File, name string) (*ast.TypeSpec, *ast.GenDecl) {
 	for _, d := range f.Decls {
 		g, ok := d.(*ast.GenDecl)
 		if !ok || g.Tok != token.TYPE {
@@ -135,14 +141,19 @@ func findType(f *ast.File, name string) *ast.TypeSpec {
 				continue
 			}
 			if ts.Name != nil && ts.Name.Name == name {
-				return ts
+				return ts, g
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func findValueSpec(f *ast.File, tok token.Token, name string) *ast.ValueSpec {
+	vs, _ := findValueSpecWithGen(f, tok, name)
+	return vs
+}
+
+func findValueSpecWithGen(f *ast.File, tok token.Token, name string) (*ast.ValueSpec, *ast.GenDecl) {
 	for _, d := range f.Decls {
 		g, ok := d.(*ast.GenDecl)
 		if !ok || g.Tok != tok {
@@ -155,12 +166,12 @@ func findValueSpec(f *ast.File, tok token.Token, name string) *ast.ValueSpec {
 			}
 			for _, id := range vs.Names {
 				if id.Name == name {
-					return vs
+					return vs, g
 				}
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func notFound(f *ast.File, spec pidgin.AnchorSpec) error {

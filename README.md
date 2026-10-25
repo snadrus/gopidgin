@@ -150,5 +150,5 @@ Token economics (optimize input vs output separately):
 - Prefer pidgin for multi‑hunk or many repeated identifiers. For a single tiny edit, regular edit may still be cheaper/faster.
 
 Cheap shapes:
-- Whole‑span rewrite: `@ path.go func (T) M` then only `+` lines with the new span; the expander replaces the entire anchor, so you do not need to re‑emit the old body as `-` lines.
+- Whole‑span rewrite: `@ path.go func (T) M` or `@ path.go type Name` then only `+` lines with the full new span (include `func`/`type`); the expander replaces the entire anchor, so you do not need to re‑emit the old body as `-` lines.
 - Surgical edit: small hunks with minimal context and only the changed lines.

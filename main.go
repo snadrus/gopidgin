@@ -16,6 +16,8 @@ import (
 	"github.com/snadrus/gopidgin/internal/anchor"
 	"github.com/snadrus/gopidgin/internal/pidgin"
 	"github.com/snadrus/gopidgin/internal/work"
+	"go/parser"
+	"go/token"
 )
 
 func main() {
@@ -235,6 +237,12 @@ func runApply(args []string) int {
 
 		final := applied
 		if isGoFile {
+			// Quick syntax check before goimports noise
+			fset := token.NewFileSet()
+			if _, perr := parser.ParseFile(fset, abs, []byte(applied), 0); perr != nil {
+				fmt.Fprintf(os.Stderr, "apply produced invalid Go in %s: %v\n", h.RelPath, perr)
+				return 3
+			}
 			// Handle special imports and formatting only for Go files
 			var ierr error
 			final, ierr = work.MergeSpecialImports(abs, final, h.SpecialImportsAdd, h.SpecialImportsDel)

@@ -50,7 +50,7 @@ Pidgin v0 to emit:
   - No keyword bytecode; no `vN` line references
 
 Cheap, reliable shapes:
-- Whole‑span rewrite (preferred when most of the function/type changes): `@ path.go func (T) M` followed by only `+` lines containing the new span — do not paste the old body as `-` lines. The expander replaces the entire anchor span.
+- Whole‑span rewrite (preferred when most of the function/type changes): `@ path.go func (T) M` or `@ path.go type Name` followed by only `+` lines containing the full new span — include the `func`/`type` keyword — do not paste the old body as `-` lines. The expander replaces the entire anchor span.
 - Surgical edit: use minimal ` ` / `-` / `+` with 0–2 context lines; never reprint unmodified code.
 
 Indentation and recovery:
