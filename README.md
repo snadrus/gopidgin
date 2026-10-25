@@ -163,7 +163,7 @@ Note: Match file indentation (tabs) on `-`/`+` lines when possible; the expander
 One‑shot heredoc:
 
 ```bash
-gopidgin apply <<'PIDGIN'
+gopidgin apply - <<'PIDGIN'
 @ path.go func Name
 -	old
 +	new

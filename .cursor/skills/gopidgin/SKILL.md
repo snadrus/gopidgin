@@ -46,7 +46,7 @@ How to expand:
 - Preferred one‑shot heredoc (single tool invocation for write+apply):
 
 ```bash
-go run github.com/snadrus/gopidgin@latest apply <<'PIDGIN'
+go run github.com/snadrus/gopidgin@latest apply - <<'PIDGIN'
 @ path.go func Name
 -	old
 +	new
@@ -56,7 +56,7 @@ PIDGIN
 If `gopidgin` is already on PATH, prefer it over `go run`:
 
 ```bash
-gopidgin apply <<'PIDGIN'
+gopidgin apply - <<'PIDGIN'
 @ path.go func Name
 -	old
 +	new

@@ -80,14 +80,20 @@ func runApply(args []string) int {
 	var rdr io.Reader
 	rest := fs.Args()
 	if len(rest) == 0 {
-		inPath = filepath.Join(root, ".gopidgin")
-		f, err := os.Open(inPath)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "input file not found: %s\n", inPath)
-			return 2
+		// If stdin is not a TTY (data is piped), read stdin. Otherwise default to .gopidgin.
+		if fi, err := os.Stdin.Stat(); err == nil && (fi.Mode()&os.ModeCharDevice) == 0 {
+			rdr = bufio.NewReader(os.Stdin)
+			inPath = "stdin"
+		} else {
+			inPath = filepath.Join(root, ".gopidgin")
+			f, err := os.Open(inPath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "input file not found: %s\n", inPath)
+				return 2
+			}
+			defer f.Close()
+			rdr = f
 		}
-		defer f.Close()
-		rdr = f
 	} else if rest[0] == "-" {
 		rdr = bufio.NewReader(os.Stdin)
 		inPath = "stdin"
