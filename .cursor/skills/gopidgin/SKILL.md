@@ -14,8 +14,8 @@ go run github.com/snadrus/gopidgin@latest apply [flags]
 
 One‑shot loop (tool‑agnostic):
 1) Read only the Go source files you will change (avoid re‑reading this skill mid‑loop; avoid reading go.mod or globbing unrelated paths).
-2) Produce one Pidgin document with all hunks — either write it as module‑root `.gopidgin` or pipe it on stdin.
-3) Run exactly one `go run github.com/snadrus/gopidgin@latest apply` (file default uses `.gopidgin`; use `apply -` for stdin). Optionally run one `go build` or `go test`.
+2) Produce one Pidgin document with all hunks and pipe it on stdin.
+3) Run exactly one heredoc shell: `go run github.com/snadrus/gopidgin@latest apply - <<'PIDGIN' ... PIDGIN` and, if needed, one `go build` or `go test` in the same shell.
 4) Stop. Do not paste the expanded Go back into the chat unless the user asks for it.
 
 No dry‑run unless the user explicitly requests a preview.
@@ -54,15 +54,7 @@ Indentation and recovery:
 - If apply fails, re‑read the file and fix the hunk indent; the expander tolerates leading‑whitespace mismatch on context/`-` lines, but exact matches are most reliable.
 - Go formatters/imports run only for `.go` files; other paths are applied raw.
 
-How to expand (either approach is fine — pick one and succeed on the first apply):
-- Write `.gopidgin` then run apply (file default):
-
-```bash
-printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
-go run github.com/snadrus/gopidgin@latest apply
-```
-
-- Or pipe to stdin explicitly:
+How to expand (canonical one‑shot via stdin):
 
 ```bash
 go run github.com/snadrus/gopidgin@latest apply - <<'PIDGIN'
@@ -70,6 +62,13 @@ go run github.com/snadrus/gopidgin@latest apply - <<'PIDGIN'
 -	old
 +	new
 PIDGIN
+```
+
+- Optional (humans/CLI): write `.gopidgin` then run apply (file default):
+
+```bash
+printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
+go run github.com/snadrus/gopidgin@latest apply
 ```
 
 Create hunk example:

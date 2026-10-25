@@ -117,7 +117,7 @@ go run . apply -n -C example example.gopidgin
 ### Agents and shell usage
 
 - Read only the `.go` files you will edit.
-- Produce one pidgin document with all hunks — either write module‑root `.gopidgin` or pipe on stdin.
+- Produce one pidgin document with all hunks and pipe it on stdin.
 - Run exactly one apply (no `-n` unless a preview was requested), then optionally `go build`/`go test` once.
 - Stop; do not paste the expanded Go back into chat.
 
@@ -127,14 +127,7 @@ Recovery protocol:
 - If `apply` reports a mismatch, re‑read the target source file and fix the pidgin document once using the expected/got hint, then run `apply` again.
 - Avoid using dry‑run for recovery — prefer succeeding on the first (or second after one correction) real apply.
 
-Write `.gopidgin` then apply (file default):
-
-```bash
-printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
-go run github.com/snadrus/gopidgin@latest apply
-```
-
-Or heredoc to stdin (explicit `-`):
+Canonical (stdin heredoc):
 
 ```bash
 go run github.com/snadrus/gopidgin@latest apply - <<'PIDGIN'
@@ -142,6 +135,13 @@ go run github.com/snadrus/gopidgin@latest apply - <<'PIDGIN'
 -	old
 +	new
 PIDGIN
+```
+
+Optional (humans/CLI): write `.gopidgin` then apply (file default):
+
+```bash
+printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
+go run github.com/snadrus/gopidgin@latest apply
 ```
 
 Token economics (optimize input vs output separately):
