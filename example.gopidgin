@@ -1,0 +1,4 @@
+@ hello/hello.go func (Greeter) Greet
+- return "hi"
++ return "hello"
+
