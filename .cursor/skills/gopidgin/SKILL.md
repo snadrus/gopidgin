@@ -42,14 +42,14 @@ Indentation and recovery:
 - Only edit `.gopidgin` (or stdin), never `.go` directly.
 
 How to expand:
-- Preferred (Cursor agents): write `.gopidgin` then run apply (no file arg):
+- Cursor/agent canonical: write `.gopidgin` then run apply (no file arg):
 
 ```bash
 printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
 gopidgin apply
 ```
 
-- Alternate (humans/CLI): heredoc to stdin (explicit `-`):
+- CLI / optional: heredoc to stdin (explicit `-`):
 
 ```bash
 gopidgin apply - <<'PIDGIN'

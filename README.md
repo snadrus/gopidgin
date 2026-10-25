@@ -160,14 +160,14 @@ Note: Match file indentation (tabs) on `-`/`+` lines when possible; the expander
 - Optionally run `go build` or `go test` once to validate.
 - Stop; do not paste the expanded Go back into chat.
 
-Preferred (Cursor agents): write `.gopidgin` then apply (no file arg):
+Cursor/agent canonical: write `.gopidgin` then apply (no file arg):
 
 ```bash
 printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
 gopidgin apply
 ```
 
-Alternate (humans/CLI): heredoc to stdin (explicit `-`):
+CLI / optional: heredoc to stdin (explicit `-`):
 
 ```bash
 gopidgin apply - <<'PIDGIN'
