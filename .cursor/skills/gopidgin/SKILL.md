@@ -49,6 +49,10 @@ Pidgin v0 to emit:
   - `$name=Identifier` or `$=Identifier`
   - No keyword bytecode; no `vN` line references
 
+Cheap, reliable shapes:
+- Whole‑span rewrite (preferred when most of the function/type changes): `@ path.go func (T) M` followed by only `+` lines containing the new span — do not paste the old body as `-` lines. The expander replaces the entire anchor span.
+- Surgical edit: use minimal ` ` / `-` / `+` with 0–2 context lines; never reprint unmodified code.
+
 Indentation and recovery:
 - Copy indentation exactly from the file (gofmt uses tabs for blocks). Prefer pasting the exact current line as the `-` line and only changing `+`.
 - If apply fails, re‑read the file and fix the hunk indent; the expander tolerates leading‑whitespace mismatch on context/`-` lines, but exact matches are most reliable.

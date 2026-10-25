@@ -25,15 +25,28 @@ func (e *MatchError) Error() string {
 
 // ApplyUnified applies a simple unified hunk (context/-/+) onto base.
 // It supports a single contiguous region per hunk, with optional 0-2 context lines.
-// If there are no context/del lines (pure insertion), it inserts at the end.
+// When a hunk contains only '+' lines (no context or '-'), it REPLACES the entire base span.
 func ApplyUnified(base string, diff []DiffLine) (string, error) {
 	baseLines := splitKeepNL(base)
 	// Build the sequence of lines that must match in order (contexts and dels)
 	expected := make([]string, 0, len(diff))
+	addOnly := true
+	addBuf := make([]string, 0, len(diff))
 	for _, dl := range diff {
 		if dl.Kind == LineContext || dl.Kind == LineDel {
 			expected = append(expected, dl.Text+"\n")
+			addOnly = false
 		}
+		if dl.Kind == LineAdd {
+			addBuf = append(addBuf, dl.Text+"\n")
+		}
+	}
+	// Only additions: replace entire base span
+	if addOnly {
+		if len(addBuf) == 0 {
+			return "", fmt.Errorf("empty replacement: only '+' lines requested but none provided")
+		}
+		return strings.Join(addBuf, ""), nil
 	}
 	start := 0
 	if len(expected) > 0 {

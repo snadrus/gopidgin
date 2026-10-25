@@ -148,3 +148,7 @@ Token economics (optimize input vs output separately):
 - Output is the expensive side. As a rough score, minimize input + 4×output tokens.
 - Be concise in hunks: 0–2 context lines, no ordinary imports, use `$name=Ident` for repeated long names.
 - Prefer pidgin for multi‑hunk or many repeated identifiers. For a single tiny edit, regular edit may still be cheaper/faster.
+
+Cheap shapes:
+- Whole‑span rewrite: `@ path.go func (T) M` then only `+` lines with the new span; the expander replaces the entire anchor, so you do not need to re‑emit the old body as `-` lines.
+- Surgical edit: small hunks with minimal context and only the changed lines.
