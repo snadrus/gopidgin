@@ -1,55 +1,64 @@
 ---
 name: gopidgin
-description: Emit compact Go Pidgin hunks and expand with gopidgin apply. Use when editing Go, writing Go patches, or when the user mentions pidgin, gopidgin, or token-cheap Go output.
+description: Emit compact Go Pidgin hunks and expand locally with `gopidgin apply` to avoid streaming full gofmt/goimports noise.
 ---
 
-Use this skill to make Go edits with compact Pidgin hunks, then expand with the `gopidgin` CLI in one shot. This minimizes tool churn and tokens.
+Audience: any coding agent or human using a shell and making file edits.
 
-Strict one‑shot loop (token‑positive):
-1) Read only the target `.go` files you will change. Do NOT re‑read this skill once attached; do NOT read `go.mod`; no project‑wide globs.
-2) Write/overwrite a single `.gopidgin` at the module root with ALL hunks (one write tool call).
-3) Run exactly one shell: `gopidgin apply` (no file arg; defaults to `.gopidgin`) and optionally `go build`/`go test` once.
-4) Stop. Do not paste expanded Go back into chat.
+Install:
+- Prefer the installed binary over repeated `go run`:
 
-Hard bans:
+```bash
+go install github.com/snadrus/gopidgin@latest
+# ensure $(go env GOPATH)/bin is on PATH (or invoke by absolute path your environment uses)
+```
+
+One‑shot loop (tool‑agnostic):
+1) Read only the Go source files you will change (avoid re‑reading this skill mid‑loop; avoid reading go.mod or globbing unrelated paths).
+2) Produce one Pidgin document with all hunks — either write it as module‑root `.gopidgin` or pipe it on stdin.
+3) Run exactly one `gopidgin apply` (file default uses `.gopidgin`; use `apply -` for stdin). Optionally run one `go build` or `go test`.
+4) Stop. Do not paste the expanded Go back into the chat unless the user asks for it.
+
+No dry‑run unless the user explicitly requests a preview.
+
+General bans (keep tokens low and avoid dead ends):
 - Do not read or explore anything under `$(go env GOMODCACHE)/github.com/snadrus/gopidgin...`
-- Do not read the `github.com/snadrus/gopidgin` repository contents unless the user is developing gopidgin itself
-- Do not run `cat -A`, `od`, or hex dumps for indent debugging
-- Do not rewrite `.gopidgin` more than once unless apply failed with a clear mismatch error
-- Do not use Write/StrReplace on `.go` for the code change (edits must be pidgin + apply)
-- Do not re‑read this SKILL file during the loop (load once)
-- Do not default to dry‑run
+- Do not read the `github.com/snadrus/gopidgin` repository contents unless you are developing gopidgin itself
+- Do not hex‑dump or `cat -A` for indentation; instead, copy the exact line from the file
+- Do not re‑write `.gopidgin` more than once unless `apply` returns a clear mismatch error
+- Do not edit `.go` files directly when using this skill; emit pidgin and apply
+- Do not re‑read this skill during the loop
 
-Token economics:
+Token tip:
 - Optimize input and output separately; output is more expensive. Rough score: input + 4×output tokens.
 - Keep hunks minimal (0–2 context lines). Omit ordinary imports. Use `$name=Ident` for repeated long names. Do not reprint unmodified code.
-- Prefer pidgin for multi‑hunk changes or when many long identifiers repeat; for a trivial one‑liner, regular edit may be cheaper.
+- Prefer pidgin for multi‑hunk changes or when many long identifiers repeat. For a trivial one‑liner, a direct edit may still be cheaper.
 
-Pidgin v0 you must emit:
+Pidgin v0 to emit:
 - `@ <relpath> <anchor>`: anchors are `func Name`, `func (T) M`, `func (*T) M`, `type Name`, `const Name`, `var Name`, or `package` (never line numbers)
-- Unified diff lines inside the span: leading space=context, `-`=remove, `+`=add
+- Unified diff lines inside the span: leading space = context, `-` = remove, `+` = add
 - Imports: omit ordinary imports; only emit special ones:
   - renamed: `import sql "database/sql"`
   - blank: `import _ "image/png"`
   - dot: `import . "fmt"`
-- Optional hunk‑local aliases for repeated idents:
+- Optional hunk‑local aliases for repeated identifiers:
   - `$name=Identifier` or `$=Identifier`
   - No keyword bytecode; no `vN` line references
 
 Indentation and recovery:
 - Copy indentation exactly from the file (gofmt uses tabs for blocks). Prefer pasting the exact current line as the `-` line and only changing `+`.
-- If apply fails, re‑read the file and fix the hunk indent; expander tolerates leading‑whitespace mismatch on context/`-` lines, but exact matches are more reliable.
-- Only edit `.gopidgin` (or stdin), never `.go` directly.
+- If apply fails, re‑read the file and fix the hunk indent; the expander tolerates leading‑whitespace mismatch on context/`-` lines, but exact matches are most reliable.
+- Go formatters/imports run only for `.go` files; other paths are applied raw.
 
-How to expand:
-- Cursor/agent canonical: write `.gopidgin` then run apply (no file arg):
+How to expand (either approach is fine — pick one and succeed on the first apply):
+- Write `.gopidgin` then run apply (file default):
 
 ```bash
 printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
 gopidgin apply
 ```
 
-- CLI / optional (also viable for Cursor when avoiding a Write tool call): heredoc to stdin (explicit `-`). One shell avoids a Write round‑trip; payload tokens are similar since content appears in tool args.
+- Or pipe to stdin explicitly:
 
 ```bash
 gopidgin apply - <<'PIDGIN'
@@ -58,8 +67,6 @@ gopidgin apply - <<'PIDGIN'
 +	new
 PIDGIN
 ```
-
-Grammar and more examples: see the repo README.
 
 Create hunk example:
 

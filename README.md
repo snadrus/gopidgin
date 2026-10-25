@@ -121,55 +121,23 @@ Try dry‑run on the included fixture:
 go run . apply -n -C example example.gopidgin
 ```
 
-### Cursor agents
-
-- **Install the skill into a project**:
-
-```bash
-mkdir -p .cursor/skills/gopidgin && \
-curl -fsSL https://raw.githubusercontent.com/snadrus/gopidgin/main/.cursor/skills/gopidgin/SKILL.md \
-  -o .cursor/skills/gopidgin/SKILL.md
-```
-
-- **Install the skill globally** (for all projects):
-
-```bash
-mkdir -p ~/.cursor/skills/gopidgin && \
-curl -fsSL https://raw.githubusercontent.com/snadrus/gopidgin/main/.cursor/skills/gopidgin/SKILL.md \
-  -o ~/.cursor/skills/gopidgin/SKILL.md
-```
-
-- **Use it**:
-  - In an Agent chat, type `/gopidgin` to switch into Pidgin mode (Option/Alt+Enter to keep as Custom Mode).
-  - Emit only Go Pidgin hunks for edits; then expand locally:
-
-```bash
-go run github.com/snadrus/gopidgin@latest apply [-n] [-C modroot] [file|-]
-```
-
-- **If the skill isn't installed**:
-  - Ask the agent to output Go Pidgin hunks and run the CLI manually as above.
-
-Note: Match file indentation (tabs) on `-`/`+` lines when possible; the expander also tolerates leading‑whitespace mismatch for context and `-` lines.
-
-#### Token‑efficient Cursor loop
+### Agents and shell usage
 
 - Read only the `.go` files you will edit.
-- Write/overwrite one `.gopidgin` at the module root with all hunks (single write call).
+- Produce one pidgin document with all hunks — either write module‑root `.gopidgin` or pipe on stdin.
 - Run exactly one apply (no `-n` unless a preview was requested), then optionally `go build`/`go test` once.
-- Optionally run `go build` or `go test` once to validate.
 - Stop; do not paste the expanded Go back into chat.
 
-Note: Go formatters/imports run only for `.go` files. Other paths are applied raw with no formatting.
+Note: Match file indentation (tabs) on `-`/`+` lines when possible; the expander tolerates leading‑whitespace mismatch for context and `-` lines. Go formatters/imports run only for `.go` files; other paths are applied raw.
 
-Cursor/agent canonical: write `.gopidgin` then apply (no file arg):
+Write `.gopidgin` then apply (file default):
 
 ```bash
 printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
 gopidgin apply
 ```
 
-CLI / optional: heredoc to stdin (explicit `-`):
+Or heredoc to stdin (explicit `-`):
 
 ```bash
 gopidgin apply - <<'PIDGIN'
