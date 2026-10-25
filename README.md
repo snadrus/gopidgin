@@ -5,8 +5,7 @@ Compact agent-facing Go hunks; local expander applies them onto a module, then r
 - Quick start:
 
 ```bash
-go install github.com/snadrus/gopidgin@latest
-gopidgin apply -C example example.gopidgin
+go run github.com/snadrus/gopidgin@latest apply -C example example.gopidgin
 ```
 
 If you vendor the binary under `cmd/gopidgin`, use:
@@ -26,13 +25,7 @@ gopidgin apply [-C modroot] [-n|--dry-run] [--force] [file|-]
 - Exit codes: 0 ok; 2 parse/anchor error; 3 tool/build failure
 - Re-applying an already-applied hunk errors unless `--force`
 
-Install the binary to avoid repeated `go run` compilation:
-
-```bash
-go install github.com/snadrus/gopidgin@latest
-# then:
-gopidgin apply ...
-```
+Optional (humans): `go install github.com/snadrus/gopidgin@latest` if you prefer a persistent binary on PATH.
 
 ### Grammar (v0)
 
@@ -134,13 +127,13 @@ Write `.gopidgin` then apply (file default):
 
 ```bash
 printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
-gopidgin apply
+go run github.com/snadrus/gopidgin@latest apply
 ```
 
 Or heredoc to stdin (explicit `-`):
 
 ```bash
-gopidgin apply - <<'PIDGIN'
+go run github.com/snadrus/gopidgin@latest apply - <<'PIDGIN'
 @ path.go func Name
 -	old
 +	new

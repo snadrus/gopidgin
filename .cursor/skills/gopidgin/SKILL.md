@@ -5,18 +5,17 @@ description: Emit compact Go Pidgin hunks and expand locally with `gopidgin appl
 
 Audience: any coding agent or human using a shell and making file edits.
 
-Install:
-- Prefer the installed binary over repeated `go run`:
+Invoke:
+- Default invocation is always via `go run` to avoid PATH assumptions:
 
 ```bash
-go install github.com/snadrus/gopidgin@latest
-# ensure $(go env GOPATH)/bin is on PATH (or invoke by absolute path your environment uses)
+go run github.com/snadrus/gopidgin@latest apply [flags]
 ```
 
 One‑shot loop (tool‑agnostic):
 1) Read only the Go source files you will change (avoid re‑reading this skill mid‑loop; avoid reading go.mod or globbing unrelated paths).
 2) Produce one Pidgin document with all hunks — either write it as module‑root `.gopidgin` or pipe it on stdin.
-3) Run exactly one `gopidgin apply` (file default uses `.gopidgin`; use `apply -` for stdin). Optionally run one `go build` or `go test`.
+3) Run exactly one `go run github.com/snadrus/gopidgin@latest apply` (file default uses `.gopidgin`; use `apply -` for stdin). Optionally run one `go build` or `go test`.
 4) Stop. Do not paste the expanded Go back into the chat unless the user asks for it.
 
 No dry‑run unless the user explicitly requests a preview.
@@ -55,13 +54,13 @@ How to expand (either approach is fine — pick one and succeed on the first app
 
 ```bash
 printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
-gopidgin apply
+go run github.com/snadrus/gopidgin@latest apply
 ```
 
 - Or pipe to stdin explicitly:
 
 ```bash
-gopidgin apply - <<'PIDGIN'
+go run github.com/snadrus/gopidgin@latest apply - <<'PIDGIN'
 @ path.go func Name
 -	old
 +	new
