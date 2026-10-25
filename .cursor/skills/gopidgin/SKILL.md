@@ -49,7 +49,7 @@ printf '%s\n' '@ path.go func Name' '-	old' '+	new' > .gopidgin
 gopidgin apply
 ```
 
-- CLI / optional: heredoc to stdin (explicit `-`):
+- CLI / optional (also viable for Cursor when avoiding a Write tool call): heredoc to stdin (explicit `-`). One shell avoids a Write round‑trip; payload tokens are similar since content appears in tool args.
 
 ```bash
 gopidgin apply - <<'PIDGIN'

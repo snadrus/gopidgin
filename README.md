@@ -160,6 +160,8 @@ Note: Match file indentation (tabs) on `-`/`+` lines when possible; the expander
 - Optionally run `go build` or `go test` once to validate.
 - Stop; do not paste the expanded Go back into chat.
 
+Note: Go formatters/imports run only for `.go` files. Other paths are applied raw with no formatting.
+
 Cursor/agent canonical: write `.gopidgin` then apply (no file arg):
 
 ```bash

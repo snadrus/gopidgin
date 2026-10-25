@@ -164,7 +164,10 @@ func runApply(args []string) int {
 					fmt.Fprintf(os.Stderr, "write failed for %s: %v\n", h.RelPath, err)
 					return 3
 				}
-				touched[abs] = struct{}{}
+				// Only Go files are subject to post-create formatting
+				if strings.HasSuffix(strings.ToLower(h.RelPath), ".go") {
+					touched[abs] = struct{}{}
+				}
 			}
 			continue
 		case pidgin.ActionModify:
@@ -183,10 +186,18 @@ func runApply(args []string) int {
 		orig := string(origBytes)
 
 		// Resolve anchor
-		span, aerr := anchor.Resolve(abs, orig, h.Anchor)
-		if aerr != nil {
-			fmt.Fprintf(os.Stderr, "anchor error for %s: %v\n", h.RelPath, aerr)
-			return 2
+		isGoFile := strings.HasSuffix(strings.ToLower(h.RelPath), ".go")
+		var span anchor.Span
+		if isGoFile {
+			var aerr error
+			span, aerr = anchor.Resolve(abs, orig, h.Anchor)
+			if aerr != nil {
+				fmt.Fprintf(os.Stderr, "anchor error for %s: %v\n", h.RelPath, aerr)
+				return 2
+			}
+		} else {
+			// Non-Go files: treat span as whole file to allow raw unified edit
+			span = anchor.Span{StartOffset: 0, EndOffset: len(orig), Text: orig}
 		}
 
 		// Apply unified hunk to span
@@ -222,20 +233,22 @@ func runApply(args []string) int {
 			return 2
 		}
 
-		// Handle special imports on the applied content
-		applied, ierr := work.MergeSpecialImports(abs, applied, h.SpecialImportsAdd, h.SpecialImportsDel)
-		if ierr != nil {
-			fmt.Fprintf(os.Stderr, "import merge error for %s: %v\n", h.RelPath, ierr)
-			return 3
+		final := applied
+		if isGoFile {
+			// Handle special imports and formatting only for Go files
+			var ierr error
+			final, ierr = work.MergeSpecialImports(abs, final, h.SpecialImportsAdd, h.SpecialImportsDel)
+			if ierr != nil {
+				fmt.Fprintf(os.Stderr, "import merge error for %s: %v\n", h.RelPath, ierr)
+				return 3
+			}
+			formatted, ferr := work.GoImportsThenFmt(abs, []byte(final))
+			if ferr != nil {
+				fmt.Fprintf(os.Stderr, "format error for %s: %v\n", h.RelPath, ferr)
+				return 3
+			}
+			final = string(formatted)
 		}
-
-		// goimports then gofmt
-		formatted, ferr := work.GoImportsThenFmt(abs, []byte(applied))
-		if ferr != nil {
-			fmt.Fprintf(os.Stderr, "format error for %s: %v\n", h.RelPath, ferr)
-			return 3
-		}
-		final := string(formatted)
 
 		if isDry {
 			diff, _ := unified(abs, orig, final)
@@ -245,13 +258,16 @@ func runApply(args []string) int {
 				fmt.Fprintf(os.Stderr, "write failed for %s: %v\n", h.RelPath, err)
 				return 3
 			}
-			touched[abs] = struct{}{}
+			if isGoFile {
+				touched[abs] = struct{}{}
+			}
 		}
 	}
 
 	// For created files, run goimports+gofmt and merge imports if needed
 	if !isDry {
 		for abs := range touched {
+			// Only Go files were added to touched
 			b, _ := os.ReadFile(abs)
 			out, ferr := work.GoImportsThenFmt(abs, b)
 			if ferr != nil {
