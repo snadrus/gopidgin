@@ -111,3 +111,32 @@ Try dry‑run on the included fixture:
 ```bash
 go run . apply -n -C example example.gopidgin
 ```
+
+### Cursor agents
+
+- **Install the skill into a project**:
+
+```bash
+mkdir -p .cursor/skills/gopidgin && \
+curl -fsSL https://raw.githubusercontent.com/snadrus/gopidgin/main/.cursor/skills/gopidgin/SKILL.md \
+  -o .cursor/skills/gopidgin/SKILL.md
+```
+
+- **Install the skill globally** (for all projects):
+
+```bash
+mkdir -p ~/.cursor/skills/gopidgin && \
+curl -fsSL https://raw.githubusercontent.com/snadrus/gopidgin/main/.cursor/skills/gopidgin/SKILL.md \
+  -o ~/.cursor/skills/gopidgin/SKILL.md
+```
+
+- **Use it**:
+  - In an Agent chat, type `/gopidgin` to switch into Pidgin mode (Option/Alt+Enter to keep as Custom Mode).
+  - Emit only Go Pidgin hunks for edits; then expand locally:
+
+```bash
+go run github.com/snadrus/gopidgin@latest apply [-n] [-C modroot] [file|-]
+```
+
+- **If the skill isn't installed**:
+  - Ask the agent to output Go Pidgin hunks and run the CLI manually as above.
